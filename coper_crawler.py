@@ -46,7 +46,6 @@ class Application():
         if (re.match("\d{4}", avg) is not None )and (int(avg_list[0]) in range(2009,2050)):
             if re.match("\d{4}-\d{2}|\d{4}\s\d{2}", avg) and int(avg_list[1]) in range(1,13) :
                 if (re.match("\d{4}-\d{2}-\d{2}|\d{4}\s\d{2}\s\d{2}", avg) is not None) and int(avg_list[2]) in range(1,13) :
-                    # print(avg_list)
                     return avg_list
                 return avg_list
             return avg_list
@@ -61,11 +60,7 @@ class Application():
             ful_day = ful_day + 1
         date_tmp = (float(date[2]) / ful_day)
         date_tmp = round(date_tmp, 2)
-        # if flag ==1:
         return ((float(date[1]) - 1) + date_tmp)
-        # if flag ==2:
-        #     return ((float(date[1]) - 1) + date_tmp)
-        # pass
 
     def date_judge(self,avg_list):
         flag = len(avg_list)
@@ -165,7 +160,6 @@ class Application():
 
 if __name__ == '__main__':
     info_detal = Application()
-    # print(info_detal.date_detal)
     while True:
         avg_list = info_detal.get_avg()
         data_list = info_detal.get_info(avg_list)
