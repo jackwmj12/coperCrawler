@@ -12,14 +12,14 @@ def floatrange(start,stop,steps):
 
 class Application():
     def __init__(self):
-        ip_get = ip_acquire.ip_acq()
-        info_app = info_init.info_init()
+        ip_get = ip_acquire.IpAcquire()
+        info_app = info_init.LocalInfo()
         self.date_detal = []
         info_data = info_app.load(r"E:\\")
         user = info_data["mongo_user"]
         pwd = info_data["mongo_pw"]
         print("获取服务器地址")
-        ip = ip_get.ip_check()
+        ip = ip_get.ip_get()
         uri = 'mongodb://' + user + ":" + pwd + "@" + ip + ":" + "27017"
         client = pymongo.MongoClient(uri)
         print("连接服务器")
@@ -158,15 +158,15 @@ class Application():
     def plt_close(self):
         plt.close('all')
 
-if __name__ == '__main__':
-    info_detal = Application()
-    while True:
-        avg_list = info_detal.get_avg()
-        data_list = info_detal.get_info(avg_list)
-        info_detal.print_info(data_list)
-        info_detal.plt_list(data_list,avg_list)
-        if avg_list[0] == "end":
-            info_detal.plt_show()
+# if __name__ == '__main__':
+#     info_detal = Application()
+#     while True:
+#         avg_list = info_detal.get_avg()
+#         data_list = info_detal.get_info(avg_list)
+#         info_detal.print_info(data_list)
+#         info_detal.plt_list(data_list,avg_list)
+#         if avg_list[0] == "end":
+#             info_detal.plt_show()
 
 
 
