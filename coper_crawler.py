@@ -14,6 +14,8 @@ def floatrange(start,stop,steps):
 
 class Application():
     def __init__(self,root,Label_info):
+
+        
         ip_get = ip_acquire.IpAcquire()
         info_app = info_init.LocalInfo()
         self.date_detal = []
@@ -59,7 +61,6 @@ class Application():
                 "url":item["url"],
             }
             self.last_data=data
-        # self.data_backup()
         Label_info["text"] ="加载成功！"
         root.update()
         print("加载成功!")
@@ -173,14 +174,11 @@ class Application():
         plt.xlabel("Date{}".format(real_date))
         plt.ylabel("Price of Coper")
 
-
-
     def plt_show(self):
         plt.show()
 
     def plt_close(self):
         plt.close('all')
-
 
     def data_backup(self):
         path = os.getcwd()
@@ -212,15 +210,6 @@ class Application():
                     json_file.write(json.dumps(self.date_detal))
 
 
-# if __name__ == '__main__':
-#     info_detal = Application()
-#     while True:
-#         avg_list = info_detal.get_avg()
-#         data_list = info_detal.get_info(avg_list)
-#         info_detal.print_info(data_list)
-#         info_detal.plt_list(data_list,avg_list)
-#         if avg_list[0] == "end":
-#             info_detal.plt_show()
 
 
 

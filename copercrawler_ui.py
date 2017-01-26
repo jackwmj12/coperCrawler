@@ -3,19 +3,30 @@ import time
 import coper_crawler
 import re
 
+
 class Application():
-    def __init__(self,font,Label_info):
+    def __init__(self,main):
+        self.root = main
+        self.root.withdraw()
+        font,Label_info = self.show_font()
         self.info_detal=coper_crawler.Application(font,Label_info)
-        font.withdraw()
         self.date =time.strftime("%Y-%m-%d")
         self.coper_price_today,self.aluminium_price_today,self.price_show_date = self.get_miss_date(self.date)
         self.histy_price_preday = self.get_histry_date(self.date)
         self.author ="林聪聪"
         self.version = "1.1.2"
-        self.root = tk.Toplevel(font)
         self.createFrameTop()
         self.createFrameBody()
         self.createFrameBottom()
+        font.withdraw()
+        main.deiconify()
+
+    def show_font(self):
+        font = tk.Toplevel(self.root)
+        font.geometry('500x100+500+400')
+        Label_info = tk.Label(font, text="程序启动", fg='blue')
+        Label_info.place(x=230, y=20)
+        return font,Label_info
 
     def date_mins(self,date):
         date = date.split("-")
@@ -347,10 +358,11 @@ def Create_win(font):
     Application(font,Label_info)
 
 if __name__  == "__main__":
-    font=tk.Tk()
-    font.title("沈力电机科技股份有限公司")
-    Create_win(font)
-    font.mainloop()
+    main=tk.Tk()
+    main.title("沈力电机科技股份有限公司")
+    Application(main)
+    # Create_win(font)
+    main.mainloop()
 
 
 
