@@ -4,14 +4,15 @@ import coper_crawler
 import re
 
 class Application():
-    def __init__(self,root):
-        self.root = root
-        self.info_detal=coper_crawler.Application()
+    def __init__(self,font,Label_info):
+        self.info_detal=coper_crawler.Application(font,Label_info)
+        font.withdraw()
         self.date =time.strftime("%Y-%m-%d")
-        self.coper_price_today,self.aluminium_price_today = self.get_miss_date(self.date)
+        self.coper_price_today,self.aluminium_price_today,self.price_show_date = self.get_miss_date(self.date)
         self.histy_price_preday = self.get_histry_date(self.date)
         self.author ="林聪聪"
         self.version = "1.1.2"
+        self.root = tk.Toplevel(font)
         self.createFrameTop()
         self.createFrameBody()
         self.createFrameBottom()
@@ -19,21 +20,26 @@ class Application():
     def date_mins(self,date):
         date = date.split("-")
         day = int(date[2]) -1
-        date = date[0]+'-'+date[1]+'-'+'0'+str(day)
+        if day <10:
+            date = date[0]+'-'+date[1]+'-'+'0'+str(day)
+        else :
+            date = date[0] + '-' + date[1] + '-'+ str(day)
         if day == 0:
             date =None
         return date
 
     def get_miss_date(self,date):
+        # print(date)
         while True:
             coper_price = (self.info_detal.get_info(date))
             aluminium_price = (self.info_detal.get_info(date))
+            # print(coper_price)
             if coper_price == []:
                 date = self.date_mins(date)
                 if date == None:
-                    return None,None
+                    return None,None,None
             else:
-                return (coper_price[0])["coper_price"],(aluminium_price[0])["aluminium_price"]
+                return (coper_price[0])["coper_price"],(aluminium_price[0])["aluminium_price"],(coper_price[0])["date"]
 
     def get_histry_date(self, date):
         date_list = []
@@ -41,34 +47,31 @@ class Application():
         year_list = ["2011","2012","2013","2014","2015","2016"]
         for year in year_list:
             date_tmp = year+'-'+date[1]+'-'+date[2]
-            coper_price,aluminium_price=self.get_miss_date(date_tmp)
+            coper_price,aluminium_price,date_unuse=self.get_miss_date(date_tmp)
             data={
                 "coper_price":coper_price,
                 "aluminium_price":aluminium_price,
                 "date":date_tmp,
             }
             date_list.append(data)
-        # print(date_list)
         return date_list
 
     def createFrameTop(self):
-        self.root.geometry('600x600+10+10')
+        self.root.geometry('600x600+150+100')
         self.frm_top_label_0 = tk.Label(self.root,text='铜价查看器',fg='blue',font=("TEMPUS Sans ITC",20))
         self.frm_top_label_0.place(x=300,y=15,anchor="center")
 
-
         self.frm_top_label_1 =tk.Label(self.root,text='今日时间:{}'.format(self.date),fg='blue',font=("TEMPUS Sans ITC",10))
-        self.frm_top_label_1.place(x=400,y=10,anchor="w")
-
+        self.frm_top_label_1.place(x=430,y=10,anchor="w")
 
         self.frm_top_label_1 = tk.Label(self.root, text='今日铜价:{}'.format(self.coper_price_today), fg='blue',font=("TEMPUS Sans ITC", 10))
-        self.frm_top_label_1.place(x=400,y=30,anchor="w")
-
-
+        self.frm_top_label_1.place(x=430,y=30,anchor="w")
 
         self.frm_top_label_1 = tk.Label(self.root, text='今日铝价:{}'.format(self.aluminium_price_today), fg='blue',font=("TEMPUS Sans ITC", 10))
-        self.frm_top_label_1.place(x=400, y=50, anchor="w")
+        self.frm_top_label_1.place(x=430, y=50, anchor="w")
 
+        self.frm_top_label_1 = tk.Label(self.root, text='价格所在时间:{}'.format(self.price_show_date), fg='blue',font=("TEMPUS Sans ITC", 10))
+        self.frm_top_label_1.place(x=430, y=70, anchor="w")
 
     def createFrameBody(self):
         self.frm_body = tk.LabelFrame(self.root)
@@ -83,14 +86,12 @@ class Application():
         self.frm_body_entry_0=tk.Entry(self.root,textvariable=self.frm_body_start_date,width=10)
         self.frm_body_entry_0.place(x=150,y=100,anchor="w")
 
-
         self.frm_body_Label_1=tk.Label(self.root, text="结束年限:")
         self.frm_body_Label_1.place(x=270,y=70,anchor="w")
 
         self.frm_body_stop_date = tk.StringVar()
         self.frm_body_entry_1 = tk.Entry(self.root, textvariable=self.frm_body_stop_date,width=10)
         self.frm_body_entry_1.place(x=270,y=100,anchor="w")
-
 
         self.frm_body_Button_0=tk.Button(self.root,relief=tk.SOLID, bd=1, text="确定", command=self.button_0_process)
         self.frm_body_Button_0.place(x=400,y=95,anchor="w")
@@ -108,7 +109,6 @@ class Application():
         self.frm_body_entry_2 = tk.Entry(self.root, textvariable=self.frm_body_year_date,width=10)
         self.frm_body_entry_2.place(x=150,y=160)
 
-
         self.frm_body_Label_3 = tk.Label(self.root, text="月:")
         self.frm_body_Label_3.place(x=270,y=130)
 
@@ -116,10 +116,8 @@ class Application():
         self.frm_body_entry_3 = tk.Entry(self.root, textvariable=self.frm_body_month_date,width=10)
         self.frm_body_entry_3.place(x=270,y=160)
 
-
         self.frm_body_Button_2 = tk.Button(self.root, relief=tk.SOLID, bd=1, text="确定", command=self.button_1_process)
         self.frm_body_Button_2.place(x=400,y=155)
-
 
         '''
             第二排结束，开始第三排
@@ -134,14 +132,12 @@ class Application():
         self.frm_body_entry_4 = tk.Entry(self.root, textvariable=self.frm_body_year_date1,width=10)
         self.frm_body_entry_4.place(x=150,y=220)
 
-
         self.frm_body_Label_5 = tk.Label(self.root, text="月:")
         self.frm_body_Label_5.place(x=270,y=190)
 
         self.frm_body_month_date1 = tk.StringVar()
         self.frm_body_entry_5 = tk.Entry(self.root, textvariable=self.frm_body_month_date1,width =10)
         self.frm_body_entry_5.place(x=270,y=220)
-
 
         self.frm_body_Label_6 = tk.Label(self.root, text="日:")
         self.frm_body_Label_6.place(x=390,y=190)
@@ -174,8 +170,18 @@ class Application():
         self.frm_body_Label_10 = tk.Label(self.root, text="操作反馈:", fg='blue')
         self.frm_body_Label_10.place(x=410,y=370)
 
-        self.frm_body_Label_11 = tk.Label(self.root, text="无",fg='red')
-        self.frm_body_Label_11.place(x=525,y=370)
+        self.frm_body_Label_11 = tk.Label(self.root, text="无", fg='red')
+        self.frm_body_Label_11.place(x=525, y=370)
+
+        self.frm_body_Label_12 = tk.Label(self.root, text="CMD:",fg='blue')
+        self.frm_body_Label_12.place(x=410,y=400)
+
+        self.frm_cmd = tk.StringVar()
+        self.frm_body_entry_7 = tk.Entry(self.root, textvariable=self.frm_cmd, width=8)
+        self.frm_body_entry_7.place(x=475, y=400)
+
+        self.frm_body_Button_3 = tk.Button(self.root, relief=tk.SOLID, bd=1, text="确定", command=self.button_4_process)
+        self.frm_body_Button_3.place(x=540, y=395)
 
     def createFrameBottom(self):
         self.frm_bottom_Label_0 = tk.Label(self.root, text="历史本日价格:2016年 铜",fg='blue')
@@ -231,9 +237,8 @@ class Application():
         self.frm_bottom_Label_4 = tk.Label(self.root, text="版本号: {}".format(self.version), fg='blue')
         self.frm_bottom_Label_4.place(x=580,y=590,anchor="se")
 
-
         self.frm_bottom_Label_5 = tk.Label(self.root, text="制作: {}".format(self.author), fg='blue')
-        self.frm_bottom_Label_5.place(x=587,y=570,anchor="se")
+        self.frm_bottom_Label_5.place(x=578,y=570,anchor="se")
 
         self.frm_body_Button_3 = tk.Button(self.root, relief=tk.SOLID, bd=1, text="关闭图形",command=self.button_3_process)
         self.frm_body_Button_3.place(x=530,y=145,anchor="se")
@@ -244,6 +249,7 @@ class Application():
         start_year=self.frm_body_entry_0.get()
         stop_year=self.frm_body_entry_1.get()
         if self.date_judge(str(stop_year)) is False or self.date_judge(str(start_year))is False:
+            print("a")
             self.output_error(1)
             return
         start_year= int(self.frm_body_entry_0.get())
@@ -290,6 +296,13 @@ class Application():
         self.root.update()
         self.info_detal.plt_close()
 
+    def button_4_process(self):
+        self.frm_body_Label_11["text"] = "无"
+        self.root.update()
+        date = self.frm_body_entry_7.get()
+        if str(date) == "update":
+            self.info_detal.data_backup()
+
     def output_error(self,errornum):
         errornum = int(errornum)
         if errornum ==1:
@@ -324,11 +337,20 @@ class Application():
             if int(date[2])>31 or int(date[2])<1:
                 return False
         return True
+    def data_backup(self):
+        pass
+
+def Create_win(font):
+    font.geometry('500x100+500+400')
+    Label_info = tk.Label(font, text="程序启动", fg='blue')
+    Label_info.place(x=230, y=20)
+    Application(font,Label_info)
 
 if __name__  == "__main__":
-    root=tk.Tk()
-    root.title("沈力电机科技股份有限公司")
-    Application(root)
-    root.mainloop()
+    font=tk.Tk()
+    font.title("沈力电机科技股份有限公司")
+    Create_win(font)
+    font.mainloop()
+
 
 

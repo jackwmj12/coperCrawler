@@ -6,30 +6,39 @@ import matplotlib.pyplot as plt
 import operator
 import ip_acquire
 import info_init
+import json
+import os
 
 def floatrange(start,stop,steps):
     return [start+float(i)*(stop-start)/(float(steps)-1) for i in range(steps)]
 
 class Application():
-    def __init__(self):
+    def __init__(self,root,Label_info):
         ip_get = ip_acquire.IpAcquire()
         info_app = info_init.LocalInfo()
         self.date_detal = []
         info_data = info_app.load(r"E:\\")
         user = info_data["mongo_user"]
         pwd = info_data["mongo_pw"]
-        print("获取服务器地址")
+        Label_info["text"] = "获取服务器地址..."
+        root.update()
+        print("获取服务器地址...")
         ip = ip_get.ip_get()
         uri = 'mongodb://' + user + ":" + pwd + "@" + ip + ":" + "27017"
         client = pymongo.MongoClient(uri)
-        print("连接服务器")
+        Label_info["text"] = "连接服务器..."
+        root.update()
+        print("连接服务器...")
         metal = client['金属价格']
         coper = metal['coper']
         self.urls = coper['url']
         self.real_urls = coper['real_url_2016_3']
         self.price_info = coper['price_info']
         self.lost_index = coper['lost_index']
-        print("加载数据")
+        self.last_data = coper['last_date']
+        Label_info["text"] = "加载数据..."
+        root.update()
+        print("加载数据...")
         for item in (self.price_info).find():
             data = {
                 "url": item["url"],
@@ -39,7 +48,21 @@ class Application():
                 "date": item["date"],
             }
             self.date_detal.append(data)
-        print("加载成功")
+        Label_info["text"] = "加载数据..."
+        root.update()
+        print("加载数据...")
+        for item in self.last_data.find():
+            data={
+                "date":item["date"],
+                "index":item["index"],
+                "count":item["count"],
+                "url":item["url"],
+            }
+            self.last_data=data
+        # self.data_backup()
+        Label_info["text"] ="加载成功！"
+        root.update()
+        print("加载成功!")
 
     def get_avg(self,avg):
         avg_list = re.split(" |-|/",avg)
@@ -157,6 +180,37 @@ class Application():
 
     def plt_close(self):
         plt.close('all')
+
+
+    def data_backup(self):
+        path = os.getcwd()
+        path = path + "\\" + "Config"
+        if os.path.isdir(path) is False:
+            os.mkdir(path)
+        path_data = path + '\\' + "coper_back_up.jason"
+        path_date = path+"\\" + "last_time.jason"
+        if os.path.isfile(path_date) is False:
+            print("创建备份")
+            with open(path_date, "w") as json_file:
+                json_file.write(json.dumps(self.last_data))
+            with open(path_data, 'w') as json_file:
+                json_file.write(json.dumps(self.date_detal))
+        else:
+            with open(path_date,"r") as json_file:
+                data = json.load(json_file)
+            date =data["date"]
+            if str(date) == str(self.last_data["date"]):
+                print("无更改")
+                return
+            else:
+                print("修改备份")
+                os.remove(path_date)
+                with open(path_date, "w") as json_file:
+                    json_file.write(json.dumps(self.last_data))
+                os.remove(path_data)
+                with open(path_data, 'w') as json_file:
+                    json_file.write(json.dumps(self.date_detal))
+
 
 # if __name__ == '__main__':
 #     info_detal = Application()
