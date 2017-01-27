@@ -14,7 +14,7 @@ class Application():
         self.coper_price_today,self.aluminium_price_today,self.price_show_date = self.get_miss_date(self.date)
         self.histy_price_preday = self.get_histry_date(self.date)
         self.author ="林聪聪"
-        self.version = "1.1.2"
+        self.version = "1.2.2"
         self.createFrameTop()
         self.createFrameBody()
         self.createFrameBottom()
