@@ -27,10 +27,11 @@ def floatrange(start,stop,steps):
     return [start+float(i)*(stop-start)/(float(steps)-1) for i in range(steps)]
 
 class Application():
-    def __init__(self,root=None,Label_info=None):
+    def __init__(self,root=None,Label_info=None,use_net=True):
         self.date_detal = []
-        ip_get = ip_acquire.IpAcquire()
-        info_app = info_init.LocalInfo()
+        # self.__app_init()
+        ip_get = ip_acquire.Applaction()
+        info_app = info_init.Applaction()
         info_data = info_app.load(r"E:\\")
         user = info_data["mongo_user"]
         pwd = info_data["mongo_pw"]
@@ -47,24 +48,45 @@ class Application():
         self.lost_index = coper['lost_index']
         self.last_data = coper['last_date']
         self.update_font(3, root, Label_info)
-        for item in (self.price_info).find():
-            data = {
-                "url": item["url"],
-                "coper_price": item["coper_price"],
-                "aluminium_price": item["aluminium_price"],
-                "num": item["num"],
-                "date": item["date"],
-            }
-            self.date_detal.append(data)
-        self.update_font(4, root, Label_info)
-        for item in self.last_data.find():
-            data={
-                "date":item["date"],
-                "index":item["index"],
-                "count":item["count"],
-                "url":item["url"],
-            }
-            self.last_data=data
+        if use_net is False:
+            path = os.getcwd()
+            path_data_detal = path + "\\"+"Config"+'\\' + "coper_back_up.jason"
+            path_date_last = path + "\\" +"Config"+'\\'"last_time.jason"
+            if os.path.isfile(path_data_detal) is True and use_net is False:
+                print("读取数据文件")
+                self.update_font(4, root, Label_info)
+                with open(path_data_detal, "r") as json_file:
+                    self.date_detal = json.load(json_file)
+            else:
+                print("无法读取")
+                use_net = True
+            if os.path.isfile(path_date_last) is True and use_net is False:
+                print("读取配置文件")
+                self.update_font(4, root, Label_info)
+                with open(path_date_last, 'r') as json_file:
+                    self.last_data_item = json.load(json_file)
+            else:
+                print("无法读取")
+                use_net = True
+        if use_net is True:
+            for item in (self.price_info).find():
+                data = {
+                    "url": item["url"],
+                    "coper_price": item["coper_price"],
+                    "aluminium_price": item["aluminium_price"],
+                    "num": item["num"],
+                    "date": item["date"],
+                }
+                self.date_detal.append(data)
+            self.update_font(4, root, Label_info)
+            for item in self.last_data.find():
+                data={
+                    "date":item["date"],
+                    "index":item["index"],
+                    "count":item["count"],
+                    "url":item["url"],
+                }
+                self.last_data_item=data
         self.update_font(5, root, Label_info)
 
     def update_font(self,step,root,Label_info):
@@ -92,7 +114,10 @@ class Application():
             elif step == 5:
                 print("加载成功！")
 
-    def get_avg(self,avg):
+    def __app_init(self):
+        pass
+
+    def __get_avg(self,avg):
         avg_list = re.split(" |-|/",avg)
         if (re.match("\d{4}", avg) is not None )and (int(avg_list[0]) in range(2009,2050)):
             if re.match("\d{4}-\d{2}|\d{4}\s\d{2}", avg) and int(avg_list[1]) in range(1,13) :
@@ -126,7 +151,7 @@ class Application():
         return ful_day
 
     def get_info(self,avg):
-        avg_list = self.get_avg(avg)
+        avg_list = self.__get_avg(avg)
         data_list =[]
         flag = len(avg_list)
         for item in self.date_detal:
@@ -155,7 +180,7 @@ class Application():
             print("时间:{}  铜价:{}  铝价:{}\n".format(item["date"],item["coper_price"],item["aluminium_price"]))
 
     def plt_list(self,data_list,date):
-        date = self.get_avg(date)
+        date = self.__get_avg(date)
         if len(data_list) is 0:
             print("无该时间相关数据，请重新输入")
             return False
@@ -217,27 +242,28 @@ class Application():
         if os.path.isfile(path_date) is False:
             print("创建备份")
             with open(path_date, "w") as json_file:
-                json_file.write(json.dumps(self.last_data))
+                json_file.write(json.dumps(self.last_data_item))
             with open(path_data, 'w') as json_file:
                 json_file.write(json.dumps(self.date_detal))
         else:
             with open(path_date,"r") as json_file:
                 data = json.load(json_file)
             date =data["date"]
-            if str(date) == str(self.last_data["date"]):
+            if str(date) == str(self.last_data_item["date"]):
                 print("无更改")
-                return
+                return False
             else:
                 print("修改备份")
                 os.remove(path_date)
                 with open(path_date, "w") as json_file:
-                    json_file.write(json.dumps(self.last_data))
+                    json_file.write(json.dumps(self.last_data_item))
                 os.remove(path_data)
                 with open(path_data, 'w') as json_file:
                     json_file.write(json.dumps(self.date_detal))
+                return True
 
     def get_price_from_url(self,url_list,last_info):
-        index = self.last_info["count"]
+        index = last_info["count"]
         for item in url_list:
             url = item['url']
             date = item['date']
@@ -268,8 +294,9 @@ class Application():
     def web_coper_crawler(self):
         url_list = self.geturl_perpage()
         url_list = self.get_real_url(url_list)
-        url_list = self.judge_real_url(url_list, self.last_data["date"])
-        if self.coper_info_update(url_list,self.last_data) is True:
+        url_list = self.judge_real_url(url_list, self.last_data_item["date"])
+        print(url_list)
+        if self.coper_info_update(url_list,self.last_data_item) is True:
             print("数据更新成功")
             return True
         else:
@@ -281,7 +308,7 @@ class Application():
             return False
         count = self.get_price_from_url(url_list, last_info)
         if count != 0:
-            self.last_date.update({"index": 0},
+            self.last_data.update({"index": 0},
                              {'$set': {'date': (url_list[0])["date"], "url": (url_list[0])["url"], "count": count}})
             return True
         else:
@@ -315,7 +342,6 @@ class Application():
             try:
                 wp = urllib.request.urlopen(req)
                 content = wp.read()
-                # print(content)
                 soup = content.decode('utf-8','ignore')  # utf-8解码
             except Exception as e:
                 print(e)
