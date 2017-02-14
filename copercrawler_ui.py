@@ -7,6 +7,8 @@ import re
 import json
 import os
 import win32api
+from win32api import GetSystemMetrics
+
 
 class Application():
     def __init__(self,main):
@@ -19,7 +21,7 @@ class Application():
         self.root2.withdraw()
         self.root.withdraw()
         font,Label_info = self.show_font()
-        self.info_detal=coper_crawler.Application(font,Label_info,use_net = False)
+        self.info_detal=coper_crawler.Application(font,Label_info,use_net = True)
         self.date =time.strftime("%Y-%m-%d")
         self.coper_price_today,self.aluminium_price_today,self.price_show_date = self.get_miss_date(self.date)
         self.histy_price_preday = self.get_histry_date(self.date)
@@ -221,7 +223,6 @@ class Application():
         stop_year=self.frm_body_entry_1.get()
         print(len(start_year))
         if ((len(start_year) == 0) or (len(stop_year) == 0) or self.date_judge(str(stop_year)) is False) or (self.date_judge(str(start_year))is False):
-            # print("a")
             self.output_error(1)
             return
         start_year= int(self.frm_body_entry_0.get())

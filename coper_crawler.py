@@ -2,6 +2,8 @@
 #-*- coding: utf-8 -*-
 import re
 import pymongo
+import matplotlib
+matplotlib.use("Pdf")
 import matplotlib.pyplot as plt
 import operator
 import ip_acquire
@@ -32,7 +34,8 @@ class Application():
         # self.__app_init()
         ip_get = ip_acquire.Applaction()
         info_app = info_init.Applaction()
-        info_data = info_app.load(r"E:\\")
+        info_data = info_app.load_decode(path="E:", file_name="data_init.jason")
+        # info_data = info_app.load(r"E:\\")
         user = info_data["mongo_user"]
         pwd = info_data["mongo_pw"]
         self.update_font(1,root,Label_info)
@@ -184,7 +187,6 @@ class Application():
         if len(data_list) is 0:
             print("无该时间相关数据，请重新输入")
             return False
-        # print(date)
         real_date = date
         flag = len(date)
         x = []
@@ -277,6 +279,8 @@ class Application():
                 altium_price = price.split("A00铝")[1]
                 coper_price = (re.findall(r"\d{5}\—\d{5}", coper_price, re.M))[0]
                 altium_price = (re.findall(r"\d{5}\—\d{5}", altium_price, re.M))[0]
+                coper_price = (int((coper_price.split("—"))[0])+int((coper_price.split("—"))[1]))/2
+                altium_price = (int((altium_price.split("—"))[0]) + int((altium_price.split("—"))[1])) / 2
                 data={
                     "url":url,
                     "num":str(index),
@@ -284,6 +288,7 @@ class Application():
                     "coper_price":str(coper_price),
                     "aluminium_price":str(altium_price),
                 }
+                print("获取的铜价是{}".format(data))
                 self.price_info.insert_one(data)
             except Exception as e:
                 print(e)
@@ -293,9 +298,10 @@ class Application():
 
     def web_coper_crawler(self):
         url_list = self.geturl_perpage()
+        print("完整连接为:{}".format(url_list))
         url_list = self.get_real_url(url_list)
+        print("真正连接为{}".format(url_list))
         url_list = self.judge_real_url(url_list, self.last_data_item["date"])
-        print(url_list)
         if self.coper_info_update(url_list,self.last_data_item) is True:
             print("数据更新成功")
             return True
@@ -379,10 +385,8 @@ class Application():
 if __name__ == '__main__':
     coper_app = Application()
     while True:
-        if coper_app.web_coper_crawler() is True:
-            time.sleep(3600)
-        else:
-            time.sleep(300)
+        coper_app.web_coper_crawler()
+        time.sleep(3600)
 
 
 
