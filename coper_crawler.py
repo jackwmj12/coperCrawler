@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 #-*- coding: utf-8 -*-
+
 import re
 import pymongo
-import matplotlib
-matplotlib.use("Pdf")
-import matplotlib.pyplot as plt
 import operator
 import ip_acquire
 import info_init
@@ -14,6 +12,11 @@ import urllib
 import time
 import requests
 from bs4 import BeautifulSoup
+os_style = os.name
+if os_style is 'posix' :
+    import matplotlib
+    matplotlib.use("Pdf")
+import matplotlib.pyplot as plt
 
 weburl = "http://copper.ccmn.cn/historyprice/cjxh_1/"
 
@@ -31,15 +34,19 @@ def floatrange(start,stop,steps):
 class Application():
     def __init__(self,root=None,Label_info=None,use_net=True):
         self.date_detal = []
-        # self.__app_init()
-        ip_get = ip_acquire.Applaction()
+        # ip_get = ip_acquire.Applaction()
         info_app = info_init.Applaction()
-        info_data = info_app.load_decode(path="E:", file_name="data_init.jason")
-        # info_data = info_app.load(r"E:\\")
+        if os_style is 'posix' :
+            path = "/home/pi/share/"
+            ip = "192.168.1.115"
+        elif os_style is "nt":
+            path ="E:\\"
+            ip_get = ip_acquire.Applaction()
+            ip = ip_get.ip_get()
+        info_data = info_app.load_decode(path=path, file_name="data_init.jason")
         user = info_data["mongo_user"]
         pwd = info_data["mongo_pw"]
         self.update_font(1,root,Label_info)
-        ip = ip_get.ip_get()
         uri = 'mongodb://' + user + ":" + pwd + "@" + ip + ":" + "27017"
         client = pymongo.MongoClient(uri)
         self.update_font(2, root, Label_info)
@@ -194,6 +201,7 @@ class Application():
         plt.figure(figsize=(8, 8))
         ax = plt.gca()
         if flag == 1:
+            print("单年显示")
             month_ticks = range(1, 13)
             plt.xlim((1, 13))
             plt.xticks(month_ticks)
@@ -207,6 +215,7 @@ class Application():
                 date = self.date_trans(date)
                 x.append(date)
         elif flag ==2:
+            print("单月显示")
             ful_day = self.date_judge(date)
             day_ticks = range(1, ful_day+1)
             plt.xlim((1,ful_day+1))
@@ -224,6 +233,7 @@ class Application():
         xlabels = ax.get_xticklabels()
         for xl in xlabels:
             xl.set_rotation(75)  # 把x轴上的label旋转15度,以免太密集时有重叠
+        print(x,y)
         plt.plot(x, y)
         plt.xlabel("Date{}".format(real_date))
         plt.ylabel("Price of Coper")
@@ -265,22 +275,42 @@ class Application():
                 return True
 
     def get_price_from_url(self,url_list,last_info):
+        price_list =[]
         index = last_info["count"]
         for item in url_list:
             url = item['url']
             date = item['date']
             index = index + 1
-            wb_data = requests.get(weburl, headers=webheaders)
+            req = urllib.request.Request(url)
+            for i in webheaders:
+                req.add_header(i, webheaders[i])
             try:
-                soup = BeautifulSoup(wb_data.text, 'lxml')
-                soup = soup.decode("utf-8", "ignore")
-                price = (((soup.split("1#铜"))[1]).split("1#锌"))[0]
-                coper_price = price.split("A00铝")[0]
-                altium_price = price.split("A00铝")[1]
-                coper_price = (re.findall(r"\d{5}\—\d{5}", coper_price, re.M))[0]
-                altium_price = (re.findall(r"\d{5}\—\d{5}", altium_price, re.M))[0]
-                coper_price = (int((coper_price.split("—"))[0])+int((coper_price.split("—"))[1]))/2
-                altium_price = (int((altium_price.split("—"))[0]) + int((altium_price.split("—"))[1])) / 2
+                page = urllib.request.urlopen(req)
+                soup = BeautifulSoup(page, "lxml", from_encoding="utf8")
+                price = (soup.select('#content > table > tbody > tr > td'))
+                for item in price:
+                    price_list.append(item.text)
+                if "1#" in price_list[0] and "铜" in price_list[0]:
+                    coper_price = price_list[2]
+                    coper_price_c = price_list[3]
+                if "A00" in price_list[4] and "铝" in price_list[4]:
+                    altium_price = price_list[6]
+                    altium_price_c = price_list[7]
+                del price_list[:]
+                # price_list = []
+                # wb_data = requests.get(weburl, headers=webheaders)
+                # soup = BeautifulSoup(wb_data.text, 'lxml',from_encoding="utf8")
+                # info_list = soup.select("content > table > tbody > tr > td > a")
+                # content > table:nth-child(3) > tbody:nth-child(1) > tr:nth-child(3) > td:nth-child(1) > a:nth-child(1)
+                # soup = BeautifulSoup(wb_data.text, 'lxml')
+                # soup = soup.decode("utf-8", "ignore")
+                # price = (((soup.split("1#铜"))[1]).split("1#锌"))[0]
+                # coper_price = price.split("A00铝")[0]
+                # altium_price = price.split("A00铝")[1]
+                # coper_price = (re.findall(r"\d{5}\—\d{5}", coper_price, re.M))[0]
+                # altium_price = (re.findall(r"\d{5}\—\d{5}", altium_price, re.M))[0]
+                # coper_price = (int((coper_price.split("—"))[0])+int((coper_price.split("—"))[1]))/2
+                # altium_price = (int((altium_price.split("—"))[0]) + int((altium_price.split("—"))[1])) / 2
                 data={
                     "url":url,
                     "num":str(index),
@@ -298,9 +328,9 @@ class Application():
 
     def web_coper_crawler(self):
         url_list = self.geturl_perpage()
-        print("完整连接为:{}".format(url_list))
+        # print("完整连接为:{}".format(url_list))
         url_list = self.get_real_url(url_list)
-        print("真正连接为{}".format(url_list))
+        print("真正链接为{}".format(url_list))
         url_list = self.judge_real_url(url_list, self.last_data_item["date"])
         if self.coper_info_update(url_list,self.last_data_item) is True:
             print("数据更新成功")
@@ -339,6 +369,7 @@ class Application():
                 }
                 url_list.append(data)
         return url_list
+
     def get_real_url(self,data_list):
         realurl_list = []
         for item in data_list:
@@ -370,14 +401,19 @@ class Application():
 
     def judge_real_url(self,realurl_list, last_date):
         remove_list = []
-        date_now = last_date.split("/")
-        date_now = int(date_now[0]) * 10000 + int(date_now[1]) * 100 + int(date_now[2])
+        date_now = last_date
+        # date_now = last_date.split("/")
+        # date_now = int(date_now[0]) * 10000 + int(date_now[1]) * 100 + int(date_now[2])
         for item in realurl_list:
-            date_tmp = item["date"].split("/")
-            date_tmp = int(date_tmp[0]) * 10000 + int(date_tmp[1]) * 100 + int(date_tmp[2])
+            date_tmp = item["date"]
             if date_now >= date_tmp:
                 print("remove{}".format(item))
                 remove_list.append(item)
+            # date_tmp = item["date"].split("/")
+            # date_tmp = int(date_tmp[0]) * 10000 + int(date_tmp[1]) * 100 + int(date_tmp[2])
+            # if date_now >= date_tmp:
+            #     print("remove{}".format(item))
+            #     remove_list.append(item)
         for item in remove_list:
             realurl_list.remove(item)
         return realurl_list
@@ -387,6 +423,24 @@ if __name__ == '__main__':
     while True:
         coper_app.web_coper_crawler()
         time.sleep(3600)
+    # url = "http://tj.copperhome.net/201702/14/tongjia_120060.html"
+    # price_list=[]
+    # n = 0
+    # req = urllib.request.Request(url)
+    # for i in webheaders:
+    #     req.add_header(i,webheaders[i])
+    # page = urllib.request.urlopen(req)
+    # soup = BeautifulSoup(page,"lxml", from_encoding="utf8")
+    # price = soup.select('#content > table > tbody > tr > td')
+    # for item in price:
+    #     price_list.append(item.text)
+    # if "1#" in price_list[0] and "铜" in price_list[0]:
+    #     coper_price = price_list[2]
+    #     coper_price_c = price_list[3]
+    # if "A00" in price_list[4] and "铝" in price_list[4]:
+    #     altium_price = price_list[6]
+    #     altium_price_c = price_list[7]
+    # print(coper_price,coper_price_c,altium_price,altium_price_c)
 
 
 
